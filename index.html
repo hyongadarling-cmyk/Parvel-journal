@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Journal Trading — Parvel SMC</title>
+
+<!-- ── PWA ── -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#f0c040">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+  :root {
+    --bg:        #0a0c0f;
+    --bg2:       #111318;
+    --bg3:       #181c23;
+    --border:    #1e2530;
+    --gold:      #f0c040;
+    --gold-dim:  #9a7c1f;
+    --green:     #00c896;
+    --red:       #ff4d6a;
+    --text:      #e8eaf0;
+    --muted:     #5a6070;
+    --accent:    #2a3040;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    min-height: 100vh;
+    padding-bottom: 80px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: var(--gold);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .logo-text { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; }
+  .logo-sub  { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+  .header-date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    text-align: right;
+  }
+
+  /* ── STATS BAR ── */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .stat-card { background: var(--bg2); padding: 14px 16px; text-align: center; }
+  .stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
+  .stat-value { font-size: 18px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+  .stat-value.green { color: var(--green); }
+  .stat-value.red   { color: var(--red); }
+  .stat-value.gold  { color: var(--gold); }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 16px;
+  }
+  .tab {
+    padding: 14px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+  /* ── MAIN CONTENT ── */
+  .content { padding: 20px 16px; }
+
+  /* ── FORM ── */
+  .form-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .form-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--gold);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1 / -1; }
+
+  label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    font-weight: 500;
+  }
+
+  input, select, textarea {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--gold-dim); }
+  select option { background: var(--bg3); }
+  textarea { resize: vertical; min-height: 70px; }
+
+  .direction-group { display: flex; gap: 8px; }
+  .dir-btn {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .dir-btn.buy.active  { background: rgba(0,200,150,0.15); border-color: var(--green); color: var(--green); }
+  .dir-btn.sell.active { background: rgba(255,77,106,0.15); border-color: var(--red);   color: var(--red); }
+
+  .confirm-group { display: flex; gap: 8px; flex-wrap: wrap; }
+  .confirm-chip {
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    color: var(--muted);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+  }
+  .confirm-chip.active {
+    background: rgba(240,192,64,0.15);
+    border-color: var(--gold-dim);
+    color: var(--gold);
+  }
+
+  .emotion-group { display: flex; gap: 8px; }
+  .emo-btn {
+    flex: 1;
+    padding: 8px 4px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    font-size: 18px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+  }
+  .emo-btn.active { border-color: var(--gold-dim); background: rgba(240,192,64,0.1); }
+
+  .btn-submit {
+    width: 100%;
+    padding: 14px;
+    background: var(--gold);
+    color: #000;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 16px;
+    transition: opacity 0.2s;
+    letter-spacing: 0.3px;
+  }
+  .btn-submit:hover { opacity: 0.88; }
+
+  /* ── TRADE CARDS ── */
+  .trade-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .trade-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .trade-pair { font-size: 15px; font-weight: 700; }
+  .trade-result {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 6px;
+  }
+  .trade-result.win  { background: rgba(0,200,150,0.15); color: var(--green); }
+  .trade-result.loss { background: rgba(255,77,106,0.15); color: var(--red); }
+  .trade-result.be   { background: rgba(240,192,64,0.1);  color: var(--gold); }
+
+  .trade-row {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+  }
+  .trade-row span { font-family: 'JetBrains Mono', monospace; color: var(--text); }
+  .trade-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .chip { padding: 3px 8px; border-radius: 4px; font-size: 11px; background: var(--accent); color: var(--muted); }
+
+  /* ── EMPTY STATE ── */
+  .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-text { font-size: 14px; }
+
+  /* ── STATS SECTION ── */
+  .stats-section { margin-bottom: 20px; }
+  .section-title {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+    margin-bottom: 12px;
+    font-weight: 600;
+  }
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stats-box { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+  .stats-box-label { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+  .stats-box-value { font-size: 22px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+
+  /* ── BOTTOM NAV ── */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    display: flex;
+    padding: 8px 0 12px;
+    z-index: 100;
+  }
+  .nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    padding: 6px;
+    color: var(--muted);
+    transition: color 0.2s;
+    font-size: 10px;
+    border: none;
+    background: none;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .nav-btn.active { color: var(--gold); }
+  .nav-btn svg { width: 22px; height: 22px; }
+
+  .page { display: none; }
+  .page.active { display: block; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">📊</div>
+    <div>
+      <div class="logo-text">Parvel Journal</div>
+      <div class="logo-sub">SMC · ICT · Squad 1%</div>
+    </div>
+  </div>
+  <div class="header-date" id="headerDate"></div>
+</header>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stat-card">
+    <div class="stat-label">Trades</div>
+    <div class="stat-value gold" id="statTotal">0</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Winrate</div>
+    <div class="stat-value green" id="statWinrate">0%</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">P&amp;L</div>
+    <div class="stat-value" id="statPnl">0%</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Série</div>
+    <div class="stat-value" id="statStreak">0</div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('add')">➕ Nouveau</div>
+  <div class="tab" onclick="switchTab('history')">📋 Historique</div>
+  <div class="tab" onclick="switchTab('stats')">📈 Stats</div>
+</div>
+
+<!-- PAGE : AJOUTER UN TRADE -->
+<div class="content page active" id="page-add">
+  <div class="form-card">
+    <div class="form-title">⚡ Nouveau Trade</div>
+    <div class="form-grid">
+
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="tradeDate">
+      </div>
+      <div class="form-group">
+        <label>Heure</label>
+        <input type="time" id="tradeTime">
+      </div>
+
+      <div class="form-group">
+        <label>Actif</label>
+        <select id="tradeAsset">
+          <option>GOLD</option>
+          <option>SILVER</option>
+          <option>US30</option>
+          <option>NAS100</option>
+          <option>EURUSD</option>
+          <option>GBPUSD</option>
+          <option>Autre</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Killzone</label>
+        <select id="tradeKz">
+          <option>02:00 - 05:00 (Londres)</option>
+          <option>07:00 - 10:00 (Overlap)</option>
+          <option>13:00 - 15:00 (New York)</option>
+          <option>19:00 - 00:01 (Asie)</option>
+        </select>
+      </div>
+
+      <div class="form-group full">
+        <label>Direction</label>
+        <div class="direction-group">
+          <div class="dir-btn buy" onclick="setDir('BUY')">▲ BUY</div>
+          <div class="dir-btn sell" onclick="setDir('SELL')">▼ SELL</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Entrée</label>
+        <input type="number" id="tradeEntry" placeholder="4215.00" step="0.01">
+      </div>
+      <div class="form-group">
+        <label>Stop Loss</label>
+        <input type="number" id="tradeSL" placeholder="4225.00" step="0.01">
+      </div>
+      <div class="form-group">
+        <label>TP1</label>
+        <input type="number" id="tradeTP1" placeholder="4190.00" step="0.01">
+      </div>
+      <div class="form-group">
+        <label>TP2</label>
+        <input type="number" id="tradeTP2" placeholder="4166.00" step="0.01">
+      </div>
+
+      <div class="form-group full">
+        <label>Setup</label>
+        <select id="tradeSetup">
+          <option>Asian Sweep + OB</option>
+          <option>FVG + OB</option>
+          <option>BOS + OB</option>
+          <option>CHoCH + OB</option>
+          <option>Liquidité + FVG</option>
+          <option>Autre</option>
+        </select>
+      </div>
+
+      <div class="form-group full">
+        <label>Confirmations cochées</label>
+        <div class="confirm-group">
+          <div class="confirm-chip" onclick="toggleChip(this)">✅ Sweep liquidité</div>
+          <div class="confirm-chip" onclick="toggleChip(this)">📦 OB</div>
+          <div class="confirm-chip" onclick="toggleChip(this)">🌀 FVG</div>
+          <div class="confirm-chip" onclick="toggleChip(this)">🔄 CHoCH</div>
+          <div class="confirm-chip" onclick="toggleChip(this)">💥 BOS</div>
+          <div class="confirm-chip" onclick="toggleChip(this)">📊 Multi-TF</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Résultat</label>
+        <select id="tradeResult">
+          <option value="win">✅ Win</option>
+          <option value="loss">❌ Loss</option>
+          <option value="be">➖ Breakeven</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>R:R réalisé</label>
+        <input type="number" id="tradeRR" placeholder="2.5" step="0.1">
+      </div>
+
+      <div class="form-group full">
+        <label>% Gain / Perte</label>
+        <input type="number" id="tradePnl" placeholder="ex: 2 ou -1" step="0.1">
+      </div>
+
+      <div class="form-group full">
+        <label>Émotion ressentie</label>
+        <div class="emotion-group">
+          <div class="emo-btn" onclick="setEmotion('😌', this)" title="Neutre">😌</div>
+          <div class="emo-btn" onclick="setEmotion('😤', this)" title="Frustré">😤</div>
+          <div class="emo-btn" onclick="setEmotion('😰', this)" title="Stressé">😰</div>
+          <div class="emo-btn" onclick="setEmotion('🤑', this)" title="Euphorique">🤑</div>
+          <div class="emo-btn" onclick="setEmotion('😎', this)" title="Confiant">😎</div>
+        </div>
+      </div>
+
+      <div class="form-group full">
+        <label>Erreur commise (si applicable)</label>
+        <select id="tradeError">
+          <option value="">Aucune ✅</option>
+          <option>SL bougé</option>
+          <option>Revenge trading</option>
+          <option>TP coupé trop tôt</option>
+          <option>Overtrading</option>
+          <option>FOMO</option>
+          <option>Setup incomplet</option>
+          <option>Autre</option>
+        </select>
+      </div>
+
+      <div class="form-group full">
+        <label>Notes / Analyse</label>
+        <textarea id="tradeNotes" placeholder="Ce que j'ai bien fait, ce que j'améliore..."></textarea>
+      </div>
+
+    </div>
+    <button class="btn-submit" onclick="saveTrade()">💾 Enregistrer le Trade</button>
+  </div>
+</div>
+
+<!-- PAGE : HISTORIQUE -->
+<div class="content page" id="page-history">
+  <div id="tradeList">
+    <div class="empty">
+      <div class="empty-icon">📭</div>
+      <div class="empty-text">Aucun trade enregistré<br>Commence par en ajouter un !</div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE : STATISTIQUES -->
+<div class="content page" id="page-stats">
+  <div class="stats-section">
+    <div class="section-title">Performance globale</div>
+    <div class="stats-grid">
+      <div class="stats-box">
+        <div class="stats-box-label">Total trades</div>
+        <div class="stats-box-value gold" id="s-total">0</div>
+      </div>
+      <div class="stats-box">
+        <div class="stats-box-label">Winrate</div>
+        <div class="stats-box-value green" id="s-wr">0%</div>
+      </div>
+      <div class="stats-box">
+        <div class="stats-box-label">P&amp;L total</div>
+        <div class="stats-box-value" id="s-pnl">0%</div>
+      </div>
+      <div class="stats-box">
+        <div class="stats-box-label">R:R moyen</div>
+        <div class="stats-box-value gold" id="s-rr">0</div>
+      </div>
+      <div class="stats-box">
+        <div class="stats-box-label">Meilleure série</div>
+        <div class="stats-box-value green" id="s-best">0</div>
+      </div>
+      <div class="stats-box">
+        <div class="stats-box-label">Série pertes max</div>
+        <div class="stats-box-value red" id="s-worst">0</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-section">
+    <div class="section-title">Erreurs fréquentes</div>
+    <div id="s-errors" class="stats-box" style="padding:16px">
+      <div style="color:var(--muted); font-size:13px">Aucune donnée</div>
+    </div>
+  </div>
+
+  <div class="stats-section">
+    <div class="section-title">Règle des 2 pertes</div>
+    <div class="stats-box" style="padding:16px">
+      <div id="s-rule2" style="font-size:14px; line-height:1.6"></div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" id="nav-add" onclick="switchTab('add')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+    Nouveau
+  </button>
+  <button class="nav-btn" id="nav-history" onclick="switchTab('history')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+    Historique
+  </button>
+  <button class="nav-btn" id="nav-stats" onclick="switchTab('stats')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Stats
+  </button>
+</nav>
+
+<script>
+// ── STATE ──────────────────────────────────────────────
+let trades = JSON.parse(localStorage.getItem('pvTrades') || '[]');
+let selectedDir = '';
+let selectedEmo = '';
+let currentTab  = 'add';
+
+// ── INIT ──────────────────────────────────────────────
+window.onload = () => {
+  const now = new Date();
+  document.getElementById('tradeDate').value = now.toISOString().split('T')[0];
+  document.getElementById('tradeTime').value = now.toTimeString().slice(0,5);
+  document.getElementById('headerDate').innerHTML =
+    now.toLocaleDateString('fr-FR', {weekday:'short', day:'2-digit', month:'short'}) +
+    '<br>' + now.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+  updateStats();
+  renderHistory();
+
+  // ── ENREGISTREMENT SERVICE WORKER ──
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(() => console.log('✅ Service Worker enregistré'))
+      .catch(err => console.warn('SW erreur:', err));
+  }
+};
+
+// ── TABS ──────────────────────────────────────────────
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + tab).classList.add('active');
+  const tabs = ['add','history','stats'];
+  document.querySelectorAll('.tab')[tabs.indexOf(tab)].classList.add('active');
+  document.getElementById('nav-' + tab).classList.add('active');
+  if (tab === 'history') renderHistory();
+  if (tab === 'stats')   renderStats();
+}
+
+// ── DIRECTION ─────────────────────────────────────────
+function setDir(d) {
+  selectedDir = d;
+  document.querySelectorAll('.dir-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.dir-btn.' + d.toLowerCase()).classList.add('active');
+}
+
+// ── ÉMOTION ──────────────────────────────────────────
+function setEmotion(e, el) {
+  selectedEmo = e;
+  document.querySelectorAll('.emo-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ── CHIPS ─────────────────────────────────────────────
+function toggleChip(el) {
+  el.classList.toggle('active');
+}
+
+// ── SAVE TRADE ────────────────────────────────────────
+function saveTrade() {
+  const confirmations = [...document.querySelectorAll('.confirm-chip.active')].map(c => c.textContent.trim());
+
+  const trade = {
+    id:       Date.now(),
+    date:     document.getElementById('tradeDate').value,
+    time:     document.getElementById('tradeTime').value,
+    asset:    document.getElementById('tradeAsset').value,
+    kz:       document.getElementById('tradeKz').value,
+    dir:      selectedDir,
+    entry:    parseFloat(document.getElementById('tradeEntry').value) || 0,
+    sl:       parseFloat(document.getElementById('tradeSL').value) || 0,
+    tp1:      parseFloat(document.getElementById('tradeTP1').value) || 0,
+    tp2:      parseFloat(document.getElementById('tradeTP2').value) || 0,
+    setup:    document.getElementById('tradeSetup').value,
+    confirms: confirmations,
+    result:   document.getElementById('tradeResult').value,
+    rr:       parseFloat(document.getElementById('tradeRR').value) || 0,
+    pnl:      parseFloat(document.getElementById('tradePnl').value) || 0,
+    emotion:  selectedEmo,
+    error:    document.getElementById('tradeError').value,
+    notes:    document.getElementById('tradeNotes').value
+  };
+
+  if (!trade.date || !trade.dir) {
+    alert('⚠️ Remplis au minimum la date et la direction.');
+    return;
+  }
+
+  trades.unshift(trade);
+  localStorage.setItem('pvTrades', JSON.stringify(trades));
+  updateStats();
+  resetForm();
+  alert('✅ Trade enregistré !');
+}
+
+// ── RESET FORM ────────────────────────────────────────
+function resetForm() {
+  const now = new Date();
+  document.getElementById('tradeDate').value = now.toISOString().split('T')[0];
+  document.getElementById('tradeTime').value = now.toTimeString().slice(0,5);
+  document.getElementById('tradeEntry').value = '';
+  document.getElementById('tradeSL').value    = '';
+  document.getElementById('tradeTP1').value   = '';
+  document.getElementById('tradeTP2').value   = '';
+  document.getElementById('tradeRR').value    = '';
+  document.getElementById('tradePnl').value   = '';
+  document.getElementById('tradeNotes').value = '';
+  document.getElementById('tradeError').value = '';
+  document.querySelectorAll('.dir-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.emo-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.confirm-chip').forEach(c => c.classList.remove('active'));
+  selectedDir = '';
+  selectedEmo = '';
+}
+
+// ── UPDATE STATS BAR ──────────────────────────────────
+function updateStats() {
+  const total = trades.length;
+  const wins  = trades.filter(t => t.result === 'win').length;
+  const wr    = total ? Math.round(wins / total * 100) : 0;
+  const pnl   = trades.reduce((s, t) => s + t.pnl, 0).toFixed(1);
+
+  // Série actuelle
+  let streak = 0;
+  for (let t of trades) {
+    if (t.result === 'win') streak++;
+    else break;
+  }
+
+  document.getElementById('statTotal').textContent   = total;
+  document.getElementById('statWinrate').textContent = wr + '%';
+
+  const pnlEl = document.getElementById('statPnl');
+  pnlEl.textContent = (pnl > 0 ? '+' : '') + pnl + '%';
+  pnlEl.className = 'stat-value ' + (pnl > 0 ? 'green' : pnl < 0 ? 'red' : '');
+
+  const strEl = document.getElementById('statStreak');
+  strEl.textContent = streak;
+  strEl.className = 'stat-value ' + (streak >= 3 ? 'green' : streak === 0 ? 'red' : 'gold');
+}
+
+// ── RENDER HISTORY ────────────────────────────────────
+function renderHistory() {
+  const container = document.getElementById('tradeList');
+  if (!trades.length) {
+    container.innerHTML = `<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Aucun trade enregistré<br>Commence par en ajouter un !</div></div>`;
+    return;
+  }
+
+  container.innerHTML = trades.map(t => `
+    <div class="trade-card">
+      <div class="trade-header">
+        <div class="trade-pair">${t.asset} <span style="color:${t.dir==='BUY'?'var(--green)':'var(--red)'}; font-size:13px">${t.dir || '—'}</span></div>
+        <div class="trade-result ${t.result}">${t.result === 'win' ? '✅ WIN' : t.result === 'loss' ? '❌ LOSS' : '➖ BE'}</div>
+      </div>
+      <div class="trade-row">
+        <span>📅 ${t.date}</span>
+        <span>🕐 ${t.time}</span>
+        <span>📊 ${t.setup}</span>
+      </div>
+      <div class="trade-row">
+        <span>Entrée: <span>${t.entry || '—'}</span></span>
+        <span>SL: <span>${t.sl || '—'}</span></span>
+        <span>RR: <span>${t.rr || '—'}</span></span>
+        <span>P&L: <span style="color:${t.pnl>0?'var(--green)':t.pnl<0?'var(--red)':'var(--text)'}">${t.pnl > 0 ? '+' : ''}${t.pnl}%</span></span>
+      </div>
+      ${t.emotion ? `<div class="trade-row"><span>${t.emotion} ${t.error ? '· ⚠️ ' + t.error : ''}</span></div>` : ''}
+      ${t.confirms.length ? `<div class="trade-chips">${t.confirms.map(c => `<span class="chip">${c}</span>`).join('')}</div>` : ''}
+      ${t.notes ? `<div style="margin-top:10px; font-size:12px; color:var(--muted); line-height:1.5">${t.notes}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+// ── RENDER STATS ──────────────────────────────────────
+function renderStats() {
+  const total  = trades.length;
+  const wins   = trades.filter(t => t.result === 'win').length;
+  const losses = trades.filter(t => t.result === 'loss').length;
+  const wr     = total ? Math.round(wins / total * 100) : 0;
+  const pnl    = trades.reduce((s, t) => s + t.pnl, 0).toFixed(1);
+  const rrVals = trades.filter(t => t.rr > 0).map(t => t.rr);
+  const rrMoy  = rrVals.length ? (rrVals.reduce((a,b) => a+b, 0) / rrVals.length).toFixed(2) : 0;
+
+  // Meilleures / pires séries
+  let bestStreak = 0, worstStreak = 0, cur = 0, curType = '';
+  [...trades].reverse().forEach(t => {
+    if (t.result === 'win') {
+      if (curType === 'win') cur++;
+      else { cur = 1; curType = 'win'; }
+      bestStreak = Math.max(bestStreak, cur);
+    } else if (t.result === 'loss') {
+      if (curType === 'loss') cur++;
+      else { cur = 1; curType = 'loss'; }
+      worstStreak = Math.max(worstStreak, cur);
+    } else { cur = 0; curType = ''; }
+  });
+
+  document.getElementById('s-total').textContent = total;
+  document.getElementById('s-wr').textContent    = wr + '%';
+  const spnl = document.getElementById('s-pnl');
+  spnl.textContent  = (pnl > 0 ? '+' : '') + pnl + '%';
+  spnl.className    = 'stats-box-value ' + (pnl > 0 ? 'green' : pnl < 0 ? 'red' : '');
+  document.getElementById('s-rr').textContent    = rrMoy;
+  document.getElementById('s-best').textContent  = bestStreak;
+  document.getElementById('s-worst').textContent = worstStreak;
+
+  // Erreurs fréquentes
+  const errMap = {};
+  trades.forEach(t => { if (t.error) errMap[t.error] = (errMap[t.error] || 0) + 1; });
+  const errEl = document.getElementById('s-errors');
+  const errEntries = Object.entries(errMap).sort((a,b) => b[1]-a[1]);
+  errEl.innerHTML = errEntries.length
+    ? errEntries.map(([e,n]) => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px"><span>${e}</span><span style="color:var(--red);font-family:'JetBrains Mono',monospace">${n}x</span></div>`).join('')
+    : '<div style="color:var(--muted); font-size:13px">Aucune erreur enregistrée 🎯</div>';
+
+  // Règle des 2 pertes
+  let consLosses = 0;
+  for (let t of trades) {
+    if (t.result === 'loss') consLosses++;
+    else break;
+  }
+  const ruleEl = document.getElementById('s-rule2');
+  if (consLosses >= 2) {
+    ruleEl.innerHTML = `<span style="color:var(--red)">🚨 STOP — ${consLosses} pertes consécutives.<br>Session terminée. Reviens demain.</span>`;
+  } else if (consLosses === 1) {
+    ruleEl.innerHTML = `<span style="color:var(--gold)">⚠️ 1 perte consécutive.<br>Prochaine perte = arrêt de session.</span>`;
+  } else {
+    ruleEl.innerHTML = `<span style="color:var(--green)">✅ Aucune perte consécutive.<br>Tu peux trader normalement.</span>`;
+  }
+}
+</script>
+</body>
+</html>
